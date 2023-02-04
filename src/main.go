@@ -22,5 +22,5 @@ func main() {
 		log.Fatal(err)
 	}
 
-	bot.HandleUpdates()
+	bot.Run()
 }
