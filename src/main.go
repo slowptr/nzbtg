@@ -3,18 +3,21 @@ package main
 import (
 	"fmt"
 	"log"
-	"os"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
+	"github.com/slowptr/nzbtg/config"
 )
 
+const CONFIG_PATH = "config.ini"
+
 func main() {
-	token := os.Getenv("TG_TOKEN")
-	if token == "" {
-		log.Fatal("TG_TOKEN is not set")
+	cfg, err := config.Load(CONFIG_PATH)
+	if err != nil {
+		config.Create(CONFIG_PATH)
+		log.Fatal("couldn't load config file, now creating...")
 	}
 
-	bot, err := tgbotapi.NewBotAPI(token)
+	bot, err := tgbotapi.NewBotAPI(cfg.Telegram.APIToken)
 	if err != nil {
 		log.Panic(err)
 	}
