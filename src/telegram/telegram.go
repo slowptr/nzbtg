@@ -4,6 +4,7 @@ import (
 	"log"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
+	"github.com/slowptr/nzbtg/sabnzbd"
 )
 
 type Telegram struct {
@@ -22,7 +23,7 @@ func New(apiToken string, doDebug bool) (*Telegram, error) {
 	return &Telegram{bot}, nil
 }
 
-func (t *Telegram) Run() {
+func (t *Telegram) Run(nzb *sabnzbd.SABNZBD) {
 	t.handleUpdates(func(u tgbotapi.Update) {
 		if u.Message == nil {
 			return

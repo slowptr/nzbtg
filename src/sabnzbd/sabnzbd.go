@@ -17,6 +17,10 @@ func New(host string, port string, APIKey string) (*SABNZBD, error) {
 	return &SABNZBD{baseURL}, nil
 }
 
+func (s *SABNZBD) AddLocalNZB(nzbPath string) (string, error) {
+	return s.makeRequest("addlocalfile", map[string]string{"name": nzbPath})
+}
+
 func (s *SABNZBD) makeRequest(mode string, params map[string]string) (string, error) {
 	resp, err := http.Get(s.baseURL + "&mode=" + mode + utils.ParamsToURL(params))
 	if err != nil {
