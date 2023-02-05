@@ -128,7 +128,7 @@ func (t *Telegram) messageHandler(u tgbotapi.Update, nzb *sabnzbd.SABNZBD, cloud
 			msg := tgbotapi.NewEditMessageText(u.Message.Chat.ID, editable.MessageID, "found folder: "+folderName)
 			t.bot.Send(msg)
 
-			src := nzb.DLPath + "\\" + f.Name()
+			src := filepath.Join(nzb.DLPath, f.Name())
 			dst := src + ".zip"
 			if f.IsDir() {
 				archive, err := os.Create(dst)
