@@ -5,6 +5,7 @@ import (
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/slowptr/nzbtg/sabnzbd"
+	"github.com/slowptr/nzbtg/tgcloud"
 )
 
 type Telegram struct {
@@ -23,9 +24,9 @@ func New(apiToken string, doDebug bool) (*Telegram, error) {
 	return &Telegram{bot}, nil
 }
 
-func (t *Telegram) Run(nzb *sabnzbd.SABNZBD) {
+func (t *Telegram) Run(nzb *sabnzbd.SABNZBD, cloud *tgcloud.TGCloud) {
 	t.handleUpdates(func(u tgbotapi.Update) {
-		t.messageHandler(u, nzb)
+		t.messageHandler(u, nzb, cloud)
 	})
 }
 

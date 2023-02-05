@@ -13,6 +13,7 @@ import (
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/slowptr/nzbtg/sabnzbd"
+	"github.com/slowptr/nzbtg/tgcloud"
 )
 
 func checkFile(u tgbotapi.Update) bool {
@@ -44,7 +45,7 @@ func checkPassword(url string) bool {
 	return strings.Contains(str, "<meta type=\"password\">")
 }
 
-func (t *Telegram) messageHandler(u tgbotapi.Update, nzb *sabnzbd.SABNZBD) {
+func (t *Telegram) messageHandler(u tgbotapi.Update, nzb *sabnzbd.SABNZBD, cloud *tgcloud.TGCloud) {
 	if !checkFile(u) {
 		msg := tgbotapi.NewMessage(u.Message.Chat.ID, "only .nzb files are supported")
 		t.bot.Send(msg)
@@ -77,6 +78,7 @@ func (t *Telegram) messageHandler(u tgbotapi.Update, nzb *sabnzbd.SABNZBD) {
 	editable, _ := t.bot.Send(msg)
 
 	folderName := ""
+	log.Println("folderName: " + folderName)
 	for {
 		status, err := nzb.GetQueue()
 		if err != nil {
@@ -86,7 +88,7 @@ func (t *Telegram) messageHandler(u tgbotapi.Update, nzb *sabnzbd.SABNZBD) {
 		}
 
 		if len(status.Slots) == 0 {
-			msg := tgbotapi.NewEditMessageText(u.Message.Chat.ID, editable.MessageID, "download finished")
+			msg := tgbotapi.NewEditMessageText(u.Message.Chat.ID, editable.MessageID, "100%, download finished...")
 			t.bot.Send(msg)
 			break
 		}
@@ -96,7 +98,7 @@ func (t *Telegram) messageHandler(u tgbotapi.Update, nzb *sabnzbd.SABNZBD) {
 		msg := tgbotapi.NewEditMessageText(u.Message.Chat.ID, editable.MessageID, status.Slots[0].Percentage+"%")
 		t.bot.Send(msg)
 
-		time.Sleep(5 * time.Second) // update every 5 seconds
+		time.Sleep(2 * time.Second)
 	}
 
 	// walk through nzb.DLPath and find folderName
@@ -106,8 +108,21 @@ func (t *Telegram) messageHandler(u tgbotapi.Update, nzb *sabnzbd.SABNZBD) {
 	}
 
 	log.Println("looking for folder: " + folderName)
-	for _, f := range files {
-		if f.Name() == folderName {
+
+	found := false
+	for {
+		if found {
+			break
+		}
+
+		for _, f := range files {
+			log.Printf("found: %s, searching for: %s", f.Name(), folderName)
+			if f.Name() != folderName {
+				continue
+			}
+
+			found = true
+
 			msg := tgbotapi.NewEditMessageText(u.Message.Chat.ID, editable.MessageID, "found folder: "+folderName)
 			t.bot.Send(msg)
 
@@ -151,8 +166,15 @@ func (t *Telegram) messageHandler(u tgbotapi.Update, nzb *sabnzbd.SABNZBD) {
 					return err
 				})
 
-				msg := tgbotapi.NewEditMessageText(u.Message.Chat.ID, editable.MessageID, "zipped folder: "+dst)
+				msg := tgbotapi.NewEditMessageText(u.Message.Chat.ID, editable.MessageID, "zipping and uploading... "+dst)
 				t.bot.Send(msg)
+
+				err = cloud.Upload(dst)
+				if err != nil {
+					msg := tgbotapi.NewEditMessageText(u.Message.Chat.ID, editable.MessageID, err.Error())
+					t.bot.Send(msg)
+					return
+				}
 			}
 		}
 	}
