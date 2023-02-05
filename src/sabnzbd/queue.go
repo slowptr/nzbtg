@@ -21,7 +21,7 @@ type Slot struct {
 	Index      int    `json:"index"`
 	NzoId      string `json:"nzo_id"`
 	Priority   string `json:"priority"`
-	Filename   string `json:"filename"`
+	FileName   string `json:"filename"`
 	Password   string `json:"password"`
 	Mb         string `json:"mb"`
 	Size       string `json:"size"`

@@ -25,13 +25,7 @@ func New(apiToken string, doDebug bool) (*Telegram, error) {
 
 func (t *Telegram) Run(nzb *sabnzbd.SABNZBD) {
 	t.handleUpdates(func(u tgbotapi.Update) {
-		if u.Message == nil {
-			return
-		}
-		msg := tgbotapi.NewMessage(u.Message.Chat.ID, u.Message.Text)
-		msg.ReplyToMessageID = u.Message.MessageID
-
-		t.bot.Send(msg)
+		t.messageHandler(u, nzb)
 	})
 }
 

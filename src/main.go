@@ -18,7 +18,7 @@ func main() {
 		log.Fatal("couldn't load config file, now creating...")
 	}
 
-	nzb, err := sabnzbd.New(cfg.SABNZBD.Host, cfg.SABNZBD.Port, cfg.SABNZBD.APIKey)
+	nzb, err := sabnzbd.New(cfg.SABNZBD.Host, cfg.SABNZBD.Port, cfg.SABNZBD.APIKey, cfg.SABNZBD.DLPath)
 	if err != nil {
 		log.Fatal(err)
 	}

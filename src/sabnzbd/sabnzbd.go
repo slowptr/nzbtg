@@ -10,11 +10,16 @@ import (
 
 type SABNZBD struct {
 	baseURL string
+	DLPath  string
 }
 
-func New(host string, port string, APIKey string) (*SABNZBD, error) {
+func New(host string, port string, APIKey string, DLPath string) (*SABNZBD, error) {
 	baseURL := fmt.Sprintf("http://%s:%s/api?apikey=%s&output=json", host, port, APIKey)
-	return &SABNZBD{baseURL}, nil
+	return &SABNZBD{baseURL, DLPath}, nil
+}
+
+func (s *SABNZBD) AddNZBURL(nzbURL string) (string, error) {
+	return s.makeRequest("addurl", map[string]string{"name": nzbURL})
 }
 
 func (s *SABNZBD) AddLocalNZB(nzbPath string) (string, error) {
