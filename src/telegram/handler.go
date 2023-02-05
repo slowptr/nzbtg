@@ -169,13 +169,18 @@ func (t *Telegram) messageHandler(u tgbotapi.Update, nzb *sabnzbd.SABNZBD, cloud
 				msg := tgbotapi.NewEditMessageText(u.Message.Chat.ID, editable.MessageID, "zipping and uploading... "+dst)
 				t.bot.Send(msg)
 
-				err = cloud.Upload(dst)
+				err = cloud.Upload(dst, u.Message.Document.FileName)
 				if err != nil {
 					msg := tgbotapi.NewEditMessageText(u.Message.Chat.ID, editable.MessageID, err.Error())
 					t.bot.Send(msg)
 					return
 				}
+
+				msg = tgbotapi.NewEditMessageText(u.Message.Chat.ID, editable.MessageID, "upload finished")
+				t.bot.Send(msg)
 			}
 		}
+
+		time.Sleep(5 * time.Second)
 	}
 }
