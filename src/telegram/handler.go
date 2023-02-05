@@ -90,6 +90,9 @@ func (t *Telegram) messageHandler(u tgbotapi.Update, nzb *sabnzbd.SABNZBD, cloud
 		if len(status.Slots) == 0 {
 			msg := tgbotapi.NewEditMessageText(u.Message.Chat.ID, editable.MessageID, "100%, download finished...")
 			t.bot.Send(msg)
+			if folderName == "" {
+				continue
+			}
 			break
 		}
 
@@ -101,18 +104,17 @@ func (t *Telegram) messageHandler(u tgbotapi.Update, nzb *sabnzbd.SABNZBD, cloud
 		time.Sleep(2 * time.Second)
 	}
 
-	// walk through nzb.DLPath and find folderName
-	files, err := ioutil.ReadDir(nzb.DLPath)
-	if err != nil {
-		log.Fatal(err)
-	}
-
 	log.Println("looking for folder: " + folderName)
 
 	found := false
 	for {
 		if found {
 			break
+		}
+
+		files, err := ioutil.ReadDir(nzb.DLPath)
+		if err != nil {
+			log.Fatal(err)
 		}
 
 		for _, f := range files {
@@ -178,6 +180,16 @@ func (t *Telegram) messageHandler(u tgbotapi.Update, nzb *sabnzbd.SABNZBD, cloud
 
 				msg = tgbotapi.NewEditMessageText(u.Message.Chat.ID, editable.MessageID, "upload finished")
 				t.bot.Send(msg)
+
+				err = os.RemoveAll(src)
+				if err != nil {
+					log.Fatal(err)
+				}
+
+				err = os.Remove(dst) // is still occupied, don't wanna sleep / loop tho
+				if err != nil {
+					log.Println(err)
+				}
 			}
 		}
 
