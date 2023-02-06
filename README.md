@@ -9,6 +9,9 @@ A telegram bot to download .nzb files and upload them into a channel.
 5. Fill out the config.ini
 6. Run ```./nzbtg```
 
+## Demonstration
+![](res/0.gif)
+
 ---
 
 ## A small idea of how it could work upfront
