@@ -100,12 +100,12 @@ func zipFolder(src string, dst string) error { // add splitting into multiple fi
 	defer zipWriter.Close()
 
 	filepath.Walk(src, func(path string, info os.FileInfo, err error) error {
-		if info.IsDir() {
-			return nil
-		}
-
 		if err != nil {
 			return err
+		}
+
+		if info.IsDir() {
+			return nil
 		}
 
 		file, err := os.Open(path)
@@ -174,14 +174,17 @@ func (t *Telegram) messageHandler(u tgbotapi.Update, nzb *sabnzbd.SABNZBD, cloud
 
 	t.bot.Send(tgbotapi.NewEditMessageText(u.Message.Chat.ID, editable.MessageID, "zipping... "+dst))
 
-	zipFolder(src, dst)
+	err = zipFolder(src, dst)
+	if err != nil {
+		t.bot.Send(tgbotapi.NewEditMessageText(u.Message.Chat.ID, editable.MessageID, "unable to zip: "+dst))
+		log.Fatal(err)
+	}
 
 	t.bot.Send(tgbotapi.NewEditMessageText(u.Message.Chat.ID, editable.MessageID, "uploading... "+dst))
 
 	err = cloud.Upload(dst, u.Message.Document.FileName)
 	if err != nil {
-		msg := tgbotapi.NewEditMessageText(u.Message.Chat.ID, editable.MessageID, err.Error())
-		t.bot.Send(msg)
+		t.bot.Send(tgbotapi.NewEditMessageText(u.Message.Chat.ID, editable.MessageID, err.Error()))
 		return
 	}
 
