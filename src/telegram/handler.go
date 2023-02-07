@@ -21,12 +21,14 @@ func checkFile(u tgbotapi.Update) bool {
 		return false
 	}
 
+	return strings.HasSuffix(u.Message.Document.FileName, ".nzb")
+
+	/* my telegram app does not set the mimetype??
 	// check if file is .nzb
 	if u.Message.Document.MimeType != "application/x-nzb" {
 		return false
 	}
-
-	return true
+	*/
 }
 
 func checkPassword(url string) bool {
