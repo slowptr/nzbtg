@@ -1,19 +1,17 @@
 package telegram
 
 import (
-	"archive/zip"
-	"io"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
-	"path/filepath"
 	"strings"
 	"time"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/slowptr/nzbtg/sabnzbd"
 	"github.com/slowptr/nzbtg/tgcloud"
+	"github.com/slowptr/nzbtg/utils"
 )
 
 func checkFile(u tgbotapi.Update) bool {
@@ -50,7 +48,7 @@ func checkPassword(url string) bool {
 func (t *Telegram) updateDownloadMessage(nzb *sabnzbd.SABNZBD, chatID int64, editMsgID int) string {
 	folderName := ""
 
-  failedLoop := 0
+	failedLoop := 0
 	for {
 		status, err := nzb.GetQueue()
 		if err != nil {
@@ -60,15 +58,15 @@ func (t *Telegram) updateDownloadMessage(nzb *sabnzbd.SABNZBD, chatID int64, edi
 		}
 
 		if len(status.Slots) == 0 {
-      if folderName == "" {
-        if (failedLoop > 3) {
-          break
-        }
+			if folderName == "" {
+				if failedLoop > 3 {
+					break
+				}
 
-        failedLoop += 1
-        time.Sleep(2)
-        continue
-      }
+				failedLoop += 1
+				time.Sleep(2)
+				continue
+			}
 			msg := tgbotapi.NewEditMessageText(chatID, editMsgID, "100%, download finished...")
 			t.bot.Send(msg)
 			break
@@ -83,64 +81,6 @@ func (t *Telegram) updateDownloadMessage(nzb *sabnzbd.SABNZBD, chatID int64, edi
 	}
 
 	return folderName
-}
-
-func findFolder(parent string, search string) string { // we dont check for directory now
-	for {
-		files, err := ioutil.ReadDir(parent)
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		for _, f := range files {
-			if f.Name() != search {
-				continue
-			}
-
-			return filepath.Join(parent, f.Name())
-		}
-	}
-}
-
-func zipFolder(src string, dst string) error { // add splitting into multiple files
-	archive, err := os.Create(dst)
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer archive.Close()
-
-	zipWriter := zip.NewWriter(archive)
-	defer zipWriter.Close()
-
-	filepath.Walk(src, func(path string, info os.FileInfo, err error) error {
-		if err != nil {
-			return err
-		}
-
-		if info.IsDir() {
-			return nil
-		}
-
-		file, err := os.Open(path)
-		if err != nil {
-			return err
-		}
-		defer file.Close()
-
-		header, _ := zip.FileInfoHeader(info)
-		header.Name, _ = filepath.Rel(src, path)
-		header.Method = zip.Deflate
-
-		writer, err := zipWriter.CreateHeader(header)
-		if err != nil {
-			return err
-		}
-
-		_, err = io.Copy(writer, file)
-		return err
-	})
-
-	return nil
 }
 
 func (t *Telegram) messageHandler(u tgbotapi.Update, nzb *sabnzbd.SABNZBD, cloud *tgcloud.TGCloud) {
@@ -182,12 +122,12 @@ func (t *Telegram) messageHandler(u tgbotapi.Update, nzb *sabnzbd.SABNZBD, cloud
 	}
 
 	log.Println("looking for folder: " + folderName)
-	src := findFolder(nzb.DLPath, folderName)
+	src := utils.FindFolder(nzb.DLPath, folderName)
 	dst := src + ".zip"
 
 	t.bot.Send(tgbotapi.NewEditMessageText(u.Message.Chat.ID, editable.MessageID, "zipping... "+dst))
 
-	err = zipFolder(src, dst)
+	err = utils.ZipFolder(src, dst)
 	if err != nil {
 		t.bot.Send(tgbotapi.NewEditMessageText(u.Message.Chat.ID, editable.MessageID, "unable to zip: "+dst))
 		log.Fatal(err)
