@@ -1,11 +1,10 @@
 package utils
 
 import (
-	"archive/zip"
-	"io"
+	"fmt"
 	"io/ioutil"
 	"log"
-	"os"
+	"os/exec"
 	"path/filepath"
 )
 
@@ -34,6 +33,17 @@ func FindFolder(parent string, search string) string { // we dont check for dire
 	}
 }
 
+func ZipFolder(src, dst string, maxSizeMB int) error {
+	// execute 7z command
+	out, err := exec.Command("7z", "a", fmt.Sprintf("-v%dm", maxSizeMB), dst, src).Output()
+	if err != nil {
+		log.Fatal(err.Error() + " | " + string(out))
+		return err
+	}
+	return nil
+}
+
+/*
 func ZipFolder(src string, dst string) error { // add splitting into multiple files
 	archive, err := os.Create(dst)
 	if err != nil {
@@ -74,3 +84,4 @@ func ZipFolder(src string, dst string) error { // add splitting into multiple fi
 
 	return nil
 }
+*/

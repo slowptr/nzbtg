@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -13,6 +14,8 @@ import (
 	"github.com/slowptr/nzbtg/tgcloud"
 	"github.com/slowptr/nzbtg/utils"
 )
+
+const MAX_SIZE_MB = 1500
 
 func checkFile(u tgbotapi.Update) bool {
 	if u.Message.Document == nil {
@@ -64,7 +67,7 @@ func (t *Telegram) updateDownloadMessage(nzb *sabnzbd.SABNZBD, chatID int64, edi
 				}
 
 				failedLoop += 1
-				time.Sleep(2)
+				time.Sleep(2 * time.Second)
 				continue
 			}
 			msg := tgbotapi.NewEditMessageText(chatID, editMsgID, "100%, download finished...")
@@ -127,29 +130,38 @@ func (t *Telegram) messageHandler(u tgbotapi.Update, nzb *sabnzbd.SABNZBD, cloud
 
 	t.bot.Send(tgbotapi.NewEditMessageText(u.Message.Chat.ID, editable.MessageID, "zipping... "+dst))
 
-	err = utils.ZipFolder(src, dst)
+	err = utils.ZipFolder(src+"\\", dst, MAX_SIZE_MB) // works on windows, does it work on linux?
 	if err != nil {
 		t.bot.Send(tgbotapi.NewEditMessageText(u.Message.Chat.ID, editable.MessageID, "unable to zip: "+dst))
 		log.Fatal(err)
 	}
 
-	t.bot.Send(tgbotapi.NewEditMessageText(u.Message.Chat.ID, editable.MessageID, "uploading... "+dst))
+	filepath.Walk(nzb.DLPath, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
 
-	err = cloud.Upload(dst, u.Message.Document.FileName)
-	if err != nil {
-		t.bot.Send(tgbotapi.NewEditMessageText(u.Message.Chat.ID, editable.MessageID, err.Error()))
-		return
-	}
+		if strings.HasPrefix(info.Name(), folderName+".zip") {
+			t.bot.Send(tgbotapi.NewEditMessageText(u.Message.Chat.ID, editable.MessageID, "uploading... "+path))
+			err = cloud.Upload(path, u.Message.Document.FileName)
+			if err != nil {
+				t.bot.Send(tgbotapi.NewEditMessageText(u.Message.Chat.ID, editable.MessageID, err.Error()))
+				log.Fatal(err)
+			}
+
+			err = os.Remove(path)
+			if err != nil {
+				log.Println(err)
+			}
+		}
+
+		return nil
+	})
 
 	t.bot.Send(tgbotapi.NewEditMessageText(u.Message.Chat.ID, editable.MessageID, "upload finished"))
 
 	err = os.RemoveAll(src)
 	if err != nil {
 		log.Fatal(err)
-	}
-
-	err = os.Remove(dst) // is still occupied, don't wanna sleep / loop tho
-	if err != nil {
-		log.Println(err)
 	}
 }
