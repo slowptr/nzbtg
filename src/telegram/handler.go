@@ -49,6 +49,8 @@ func checkPassword(url string) bool {
 
 func (t *Telegram) updateDownloadMessage(nzb *sabnzbd.SABNZBD, chatID int64, editMsgID int) string {
 	folderName := ""
+
+  failedLoop := 0
 	for {
 		status, err := nzb.GetQueue()
 		if err != nil {
@@ -58,6 +60,15 @@ func (t *Telegram) updateDownloadMessage(nzb *sabnzbd.SABNZBD, chatID int64, edi
 		}
 
 		if len(status.Slots) == 0 {
+      if folderName == "" {
+        if (failedLoop > 3) {
+          break
+        }
+
+        failedLoop += 1
+        time.Sleep(2)
+        continue
+      }
 			msg := tgbotapi.NewEditMessageText(chatID, editMsgID, "100%, download finished...")
 			t.bot.Send(msg)
 			break
