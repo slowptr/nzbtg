@@ -70,6 +70,21 @@ func ZipFolder(dlPath, src, dst string, maxSizeMB int) error { // i know
 		log.Fatal(err.Error() + " | " + string(out))
 		return err
 	}
+
+	archiveStat, err := os.Stat(dst + ".001")
+	if err != nil {
+		log.Fatal(err)
+		return err
+	}
+
+	if archiveStat.Size() < int64(maxSizeMB) {
+		err := os.Rename(dst+".001", dst)
+		if err != nil {
+			log.Fatal(err)
+			return err
+		}
+	}
+
 	return nil
 }
 
