@@ -2,10 +2,13 @@ package utils
 
 import (
 	"fmt"
+	"io/fs"
 	"io/ioutil"
 	"log"
+	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
 )
 
 func ParamsToURL(params map[string]string) string {
@@ -33,7 +36,34 @@ func FindFolder(parent string, search string) string { // we dont check for dire
 	}
 }
 
-func ZipFolder(src, dst string, maxSizeMB int) error {
+func ZipFolder(dlPath, src, dst string, maxSizeMB int) error { // i know
+	err := filepath.Walk(dlPath, func(path string, info fs.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+
+		r, err := regexp.Compile(`.*\.zip\.\d{3}`)
+		if err != nil {
+			log.Fatal(err)
+			return err
+		}
+		if r.MatchString(path) {
+			log.Println("Removing " + path)
+
+			err := os.Remove(path)
+			if err != nil {
+				log.Fatal(err)
+				return err
+			}
+		}
+
+		return nil
+	})
+	if err != nil {
+		log.Fatal(err)
+		return err
+	}
+
 	// execute 7z command
 	out, err := exec.Command("7z", "a", fmt.Sprintf("-v%dm", maxSizeMB), dst, src).Output()
 	if err != nil {

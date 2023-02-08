@@ -130,7 +130,9 @@ func (t *Telegram) messageHandler(u tgbotapi.Update, nzb *sabnzbd.SABNZBD, cloud
 
 	t.bot.Send(tgbotapi.NewEditMessageText(u.Message.Chat.ID, editable.MessageID, "zipping... "+dst))
 
-	err = utils.ZipFolder(src+"\\", dst, MAX_SIZE_MB) // works on windows, does it work on linux?
+	time.Sleep(5 * time.Second) // test?
+
+	err = utils.ZipFolder(nzb.DLPath, src, dst, MAX_SIZE_MB)
 	if err != nil {
 		t.bot.Send(tgbotapi.NewEditMessageText(u.Message.Chat.ID, editable.MessageID, "unable to zip: "+dst))
 		log.Fatal(err)
